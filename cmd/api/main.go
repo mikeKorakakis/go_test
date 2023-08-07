@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	driver "github.com/mikekorakakis/g_test/internal/drivers"
+	"github.com/mikekorakakis/g_test/internal/models"
 )
 
 const version = "1.0.0"
@@ -36,6 +39,7 @@ type application struct {
 	infoLog  *log.Logger
 	errorLog *log.Logger
 	version  string
+	DB       models.DBModel
 }
 
 func (app *application) serve() error {
@@ -57,7 +61,7 @@ func main() {
 
 	flag.IntVar(&cfg.port, "port", 4001, "Server port to listen on")
 	flag.StringVar(&cfg.env, "env", "development", "Application environment {development|production|maintenance}")
-	flag.StringVar(&cfg.db.dsn, "dsn", "user:password@tcp(localhost:3306)/database?parseTime=true&tls=false", "DSN")
+	flag.StringVar(&cfg.db.dsn, "dsn", "postgres://user:password@localhost:5432/database?sslmode=disable", "DSN")
 	flag.StringVar(&cfg.smtp.host, "smtphost", "smtp.mailtrap.io", "smtp host")
 	flag.StringVar(&cfg.smtp.username, "smtpuser", "5d235cb13c18c3", "smtp user")
 	flag.StringVar(&cfg.smtp.password, "smtppass", "0b69ba9405f0ba", "smtp password")
@@ -74,14 +78,23 @@ func main() {
 
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
+	conn, err := driver.OpenDB(cfg.db.dsn)
+
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
+	defer conn.Close()
+
 	app := &application{
 		config:   cfg,
 		infoLog:  infoLog,
 		errorLog: errorLog,
 		version:  version,
+		DB:       models.DBModel{DB: conn},
 	}
 
-	err := app.serve()
+	err = app.serve()
 	if err != nil {
 		log.Fatal(err)
 	}
