@@ -25,5 +25,11 @@ func (app *application) routes() http.Handler {
 	mux.Post("/api/todos", app.CreateTodo)
 	mux.Put("/api/todos", app.EditToDo)
 	mux.Delete("/api/todos/{id}", app.DeleteToDo)
+
+	mux.Get("/api/users", app.GetUsers)
+	mux.Get("/api/users/{id}", app.GetUserByID)
+	mux.Post("/api/users", app.CreateUser)
+	mux.Put("/api/users", app.EditUser)
+	mux.Delete("/api/users/{id}", app.DeleteUser)
 	return mux
 }

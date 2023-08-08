@@ -90,14 +90,15 @@ func (m *DBModel) EditToDo(t ToDo) (ToDo, error) {
 			updated_at = $3
 			where 
 			id = $4
+		returning name, completed, created_at, updated_at
 		`
-	_, err := m.DB.ExecContext(ctx, updateStmt, t.Name, t.Completed, time.Now(), t.ID)
-
-	if err != nil {
-		return todo, err
-	}
-	selectStmt := `select id, name, completed, created_at, updated_at from todos where id = $1`
-	err = m.DB.QueryRowContext(ctx, selectStmt, t.ID).Scan(&todo.ID, &todo.Name, &todo.Completed, &todo.CreatedAt, &todo.UpdatedAt)
+	err := m.DB.QueryRowContext(ctx, updateStmt, t.Name, t.Completed, time.Now(), t.ID).Scan(
+		&todo.ID,
+		&todo.Name,
+		&todo.Completed,
+		&todo.CreatedAt,
+		&todo.UpdatedAt,
+	)
 
 	if err != nil {
 		return todo, err
@@ -115,7 +116,7 @@ func (m *DBModel) DeleteToDo(id int) (ToDo, error) {
 	selectStmt := `select id, name, completed, created_at, updated_at from todos where id = $1`
 	err := m.DB.QueryRowContext(ctx, selectStmt, id).Scan(&todo.ID, &todo.Name, &todo.Completed, &todo.CreatedAt, &todo.UpdatedAt)
 	if err != nil {
-		return todo, err
+		return ToDo{}, err
 	}
 
 	deleteStmt := `delete from todos where id = $1`
